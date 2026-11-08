@@ -22,6 +22,12 @@ python automacao.py
 
 O navegador abre, preenche três clientes fictícios de `dados/clientes_exemplo.csv` e gera `dados/resultado.csv`. Ao repetir o cadastro com os mesmos e-mails, a aplicação recusará duplicatas (comportamento esperado).
 
+### Importação CSV e validação
+
+O arquivo pode usar **vírgula (`,`) ou ponto e vírgula (`;`)** como separador (compatível com exportações do Excel). A primeira linha precisa conter as colunas: `Nome`, `Sobrenome`, `email`, `Celular`, `Estado`, `Rua`, `numero` e `additionals`.
+
+O programa valida os registros antes de abrir o navegador e informa o número da linha caso encontre **e-mails duplicados**, colunas repetidas, registros incompletos ou valores extras. Quando há erros, nenhum cadastro é enviado.
+
 Para automação sem mostrar o Chrome: `python automacao.py --headless`. Selenium usa o Selenium Manager para resolver o driver compatível quando possível.
 
 ## Testes
