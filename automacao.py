@@ -9,18 +9,37 @@ from formulario_local import CAMPOS, validar
 
 
 def ler_clientes(path: Path) -> tuple[list[dict[str, str]], list[str]]:
+    """Lê CSV separado por vírgula ou ponto e vírgula e valida cada registro."""
     validos, erros = [], []
+    emails_vistos = set()
     with path.open("r", encoding="utf-8-sig", newline="") as file:
-        reader = csv.DictReader(file)
+        amostra = file.read(4096)
+        file.seek(0)
+        try:
+            delimitador = csv.Sniffer().sniff(amostra, delimiters=",;").delimiter
+        except csv.Error:
+            delimitador = ","
+
+        reader = csv.DictReader(file, delimiter=delimitador)
         if not reader.fieldnames or any(field not in reader.fieldnames for field in CAMPOS):
             raise ValueError("CSV precisa das colunas: " + ", ".join(CAMPOS))
+        if len(reader.fieldnames) != len(set(reader.fieldnames)):
+            raise ValueError("CSV contém nomes de colunas duplicados.")
+
         for n, row in enumerate(reader, start=2):
             try:
-                validos.append(validar(row))
+                if None in row:
+                    raise ValueError("Linha contém mais valores que colunas.")
+                if any(row.get(field) is None for field in CAMPOS):
+                    raise ValueError("Linha incompleta: faltam valores no CSV.")
+                cliente = validar(row)
+                if cliente["email"] in emails_vistos:
+                    raise ValueError("E-mail duplicado neste CSV.")
+                emails_vistos.add(cliente["email"])
+                validos.append(cliente)
             except (ValueError, TypeError) as e:
                 erros.append(f"Linha {n}: {e}")
     return validos, erros
-
 
 def executar(clientes: list[dict[str, str]], url: str, headless: bool) -> list[tuple[str, str]]:
     host = urlsplit(url)
